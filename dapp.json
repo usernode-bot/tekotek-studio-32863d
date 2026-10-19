@@ -1,0 +1,11 @@
+{
+  "description": "Turn product links into 15-second TikTok promo videos",
+  "icon": {
+    "emoji": "🎬"
+  },
+  "secrets": [],
+  "governance": {
+    "preset": "you_or_the_group"
+  },
+  "tests": []
+}
