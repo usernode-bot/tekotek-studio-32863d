@@ -78,6 +78,7 @@
        classes, swap this link for the platform-hosted engine instead:
        <script src="/usernode-tailwind/v1/tailwind.js"></script> -->
   <link rel="stylesheet" href="/tailwind.css">
+  <link rel="stylesheet" href="/screens.css">
   <!-- The platform bridge, centrally hosted and loaded by RELATIVE path (the
        handler in server.js serves it under a plain "node server.js"; the
        platform's edge answers it everywhere else). Never vendor it and never
@@ -115,21 +116,46 @@
   <!-- (Named in prose on purpose: Tailwind compiles any class-name word in
        these files, comments included, and the starter should ship only the
        components its screen uses.) -->
-  <main class="mx-auto flex max-w-md flex-col gap-8 px-4 py-10">
-
-    <!-- usernode-starter-notice@1 — starter-template messaging. When building
-         the user's real app, replace this whole screen and delete this block,
-         both sentinel comments included. -->
-    <section class="card flex flex-col items-start gap-3">
-      <div class="flex h-20 w-20 items-center justify-center rounded-2xl border border-line bg-ground text-title">🎬</div>
-      <span class="rounded-full bg-raised px-3 py-1 text-small font-medium text-muted">Starter template</span>
-      <h1 class="text-title">Tekotek Studio</h1>
-      <p class="text-body text-muted">Welcome to your new app! Everything on this screen is placeholder content that came with it.</p>
-      <p class="text-body text-muted">To change this app, ask Homeroom bot: tap the <strong class="font-semibold text-fg">Homeroom icon</strong>, then <strong class="font-semibold text-fg">Suggest an improvement</strong>. Describe what you'd like in plain English, and it will be turned into your real app.</p>
-    </section>
-    <!-- /usernode-starter-notice@1 -->
-
-    <p class="text-center text-small text-muted">Built on Homeroom. This template screen disappears once you build your real app.</p>
-  </main>
+  <!-- usernode-spec-screens@1: the screens the spec drew, carried over by the platform as this
+       first version's starting point. Their styles are in public/screens.css.
+       Change them where behaviour needs it; do not redraw them. -->
+  <div data-spec-screen="1">
+    <div class="app">
+    <div class="top"><div><div class="t">Tekotek Studio</div><div class="small">Glow Serum 30ml, 15 s</div></div><div class="small">9:16</div></div>
+    <div class="stage">
+    <div class="phone"><div class="img"><svg width="64" height="96" viewBox="0 0 24 36" fill="none" stroke="rgb(120 95 70)" stroke-width="1.5" stroke-linejoin="round"><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M10 8h4v4h-4z"/><rect x="5" y="12" width="14" height="22" rx="3"/><path d="M8 20h8M8 24h5"/></svg></div>
+    <div class="badge"><span>Today only</span>$18.90</div><div class="cap">Skin that glows in 7 days. Tap the cart.</div>
+    <svg class="finger" width="40" height="40" viewBox="0 0 24 24" fill="rgb(255 255 255)" stroke="rgb(18 18 18)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11h-9V8a2 2 0 0 0-4 0v8l-2-2a2 2 0 0 0-3 3l4 4h9a3 3 0 0 0 3-3v-1h2a2 2 0 0 0 0-4z"/><path d="M13 15h4"/></svg>
+    <div class="cart"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgb(18 18 18)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h3l2 11h10l2-8H7"/><circle cx="9" cy="20" r="1"/><circle cx="17" cy="20" r="1"/></svg></div></div>
+    <div class="side"><div class="small">Preview at 0:12. The cart pops in with a bounce and a pointing finger near the end.</div>
+    <button class="btn-secondary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 4l13 8-13 8z"/></svg>Play preview</button>
+    <button class="btn-primary">Generate preview</button>
+    <button class="btn-secondary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Export MP4</button></div>
+    </div>
+    <div class="tl"><div class="row" style="justify-content:space-between"><b>Timeline</b><span class="small">0:12 / 0:15</span></div>
+    <div class="track"><div style="flex:4">Image 1</div><div style="flex:4;background:rgb(60 60 60)">Image 2</div><div style="flex:3">Image 3</div><div style="flex:4;background:rgb(var(--cart));color:rgb(var(--ink))">Cart</div><span class="head"></span></div>
+    <div class="over"><div style="flex:2"></div><div style="flex:13;background:rgb(var(--accent));color:rgb(var(--on-accent))">Price badge</div></div>
+    <div class="small">Voiceover runs the whole clip</div></div>
+    <div class="section-label">Product link</div>
+    <div class="row"><div class="field small" style="color:rgb(var(--muted))">e.g. https://shop.example/glow-serum</div><button class="btn-secondary" style="flex:none">Fill in</button></div>
+    <div class="section-label">Product images</div>
+    <div class="thumbs">
+    <div class="th"><span class="x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div>
+    <div class="th" style="background:rgb(190 170 150)"><span class="x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div>
+    <div class="th" style="background:rgb(235 222 205)"><span class="x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div>
+    <div class="th add"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+    <div class="small" style="margin:8px 4px 0">3 of up to 5 images, shown in this order</div>
+    <div class="section-label">Product details</div>
+    <div class="lbl">Product name</div>
+    <div class="field" style="margin-bottom:8px">Glow Serum 30ml</div>
+    <div class="row"><div><div class="lbl">Price</div><div class="field">$18.90</div></div><div><div class="lbl">Badge text</div><div class="field">Today only</div></div></div>
+    <div class="section-label">Voiceover script</div>
+    <div class="small" style="margin:0 4px 8px">Written for you from the product details. Edit it freely.</div>
+    <div class="field script">Tired of dull skin? Meet Glow Serum. One drop a day and you see it in a week. Only $18.90 today. Tap the yellow cart before it sells out.</div>
+    <div class="small" style="margin:8px 4px 12px">27 words, about 12 seconds</div>
+    <div class="row"><button class="btn-secondary" style="flex:1">Rewrite</button><button class="btn-secondary" style="flex:1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>Hear it</button></div>
+    </div>
+  </div>
+  <!-- /usernode-spec-screens@1 -->
 </body>
 </html>
