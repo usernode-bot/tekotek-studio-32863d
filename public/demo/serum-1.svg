@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="405" height="720" viewBox="0 0 405 720">
+  <rect width="405" height="720" fill="#ead9c0"/>
+  <rect x="40" y="60" width="120" height="18" rx="9" fill="#dcc6a4"/>
+  <rect x="40" y="640" width="200" height="14" rx="7" fill="#dcc6a4"/>
+  <rect x="165" y="120" width="76" height="60" rx="8" fill="#b98a4e"/>
+  <rect x="173" y="150" width="60" height="26" rx="5" fill="#8a6234"/>
+  <rect x="112" y="180" width="182" height="380" rx="28" fill="#c98a3d"/>
+  <rect x="130" y="205" width="146" height="330" rx="20" fill="#e9b263"/>
+  <rect x="150" y="290" width="106" height="120" rx="10" fill="#fdf6ea"/>
+  <text x="203" y="345" font-family="system-ui, sans-serif" font-size="26" font-weight="700" text-anchor="middle" fill="#5c4326">Glow</text>
+  <text x="203" y="378" font-family="system-ui, sans-serif" font-size="20" text-anchor="middle" fill="#8a6234">30 ml</text>
+</svg>

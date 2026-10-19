@@ -147,6 +147,211 @@ app.use((req, res, next) => {
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
+// ── Studio API ────────────────────────────────────────────────────────────
+// The app keeps no data: these two routes only fetch things (a script from
+// the platform's LLM proxy, a product page the user pasted).
+
+const LLM_ENABLED = !!process.env.USERNODE_LLM_PROXY_TOKEN;
+
+app.get('/api/config', (_req, res) => {
+  res.json({ staging: IS_STAGING, llm: { available: LLM_ENABLED } });
+});
+
+// The system prompt carries the platform's content rules: the model must
+// decline age-restricted topics and answer with a neutral line instead.
+const SCRIPT_SYSTEM = [
+  'You write voiceover scripts for 15-second TikTok promo videos.',
+  'Write about 30 words in 3 to 5 short sentences, plain and friendly.',
+  'Name the product, mention the price, and end with a line asking viewers to tap the yellow cart.',
+  'Reply with ONLY the script text: no quotes, no headings, no lists.',
+  'You must decline requests about sexual or suggestive themes, violence, weapons, gambling, drugs or alcohol, and real-world tragedy:',
+  'in those cases reply exactly: I can only write promo scripts for everyday products.',
+].join(' ');
+
+function cleanScriptText(text) {
+  return String(text || '').replace(/^["“”\s]+|["“”\s]+$/g, '').trim();
+}
+
+app.post('/api/script', async (req, res) => {
+  if (!LLM_ENABLED) return res.status(503).json({ error: 'llm_unavailable' });
+  const name = typeof req.body.name === 'string' ? req.body.name.trim().slice(0, 120) : '';
+  const price = typeof req.body.price === 'string' ? req.body.price.trim().slice(0, 40) : '';
+  const badge = typeof req.body.badge === 'string' ? req.body.badge.trim().slice(0, 80) : '';
+  if (!name) return res.status(400).json({ error: 'name_required' });
+
+  try {
+    const parts = [`Product: ${name}`, price ? `Price: ${price}` : '', badge ? `Badge text: ${badge}` : ''];
+    const resp = await fetch(`${process.env.USERNODE_LLM_PROXY_URL}/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'anthropic-version': '2023-06-01',
+        'x-usernode-app-token': process.env.USERNODE_LLM_PROXY_TOKEN,
+        'x-usernode-user-token': req.headers['x-usernode-token'] || '',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-5-5',
+        max_tokens: 300,
+        system: SCRIPT_SYSTEM,
+        messages: [{ role: 'user', content: parts.filter(Boolean).join('\n') }],
+      }),
+    });
+    if (resp.status === 403) {
+      return res.status(403).json({ error: 'grant_required' });
+    }
+    if (resp.status === 429) {
+      let code = '';
+      try { code = (await resp.json()).code || ''; } catch {}
+      const message = code === 'app_cap_exceeded'
+        ? 'Daily AI cap for this app reached. It resets at midnight UTC.'
+        : 'Your daily AI budget is used up. Try again tomorrow.';
+      return res.status(429).json({ error: code || 'rate_limited', message });
+    }
+    if (!resp.ok) {
+      console.warn('script proxy failed: ' + resp.status);
+      return res.status(502).json({ error: 'script_failed' });
+    }
+    const data = await resp.json();
+    const script = cleanScriptText((data.content || []).map((c) => (c.type === 'text' ? c.text : '')).join(' '));
+    if (!script) return res.status(502).json({ error: 'script_failed' });
+    return res.json({ script });
+  } catch (err) {
+    console.warn('script proxy error: ' + err.message);
+    return res.status(502).json({ error: 'script_failed' });
+  }
+});
+
+// ── Product link reader ───────────────────────────────────────────────────
+// A guarded fetch of a product page: http(s) only, DNS resolved and checked
+// against loopback / private / link-local / metadata addresses (again after
+// each redirect), 5 s timeout, 2 MB page and 5 MB per image, image content
+// types only. Anything that fails is 422 unreadable.
+
+const dns = require('dns').promises;
+const PAGE_LIMIT = 2 * 1024 * 1024;
+const IMAGE_LIMIT = 5 * 1024 * 1024;
+
+function isPrivateIp(ip) {
+  const m4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ip);
+  if (m4) {
+    const a = Number(m4[1]);
+    const b = Number(m4[2]);
+    if (a === 0 || a === 10 || a === 127) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 169 && b === 254) return true; // link-local, incl. cloud metadata
+    if (a === 100 && b >= 64 && b <= 127) return true;
+    if (a === 198 && (b === 18 || b === 19)) return true;
+    if (a >= 224) return true;
+    return false;
+  }
+  const low = String(ip).toLowerCase();
+  if (low === '::1' || low === '::') return true;
+  if (/^f[cd]/.test(low)) return true; // ULA fc00::/7
+  if (/^fe[89ab]/.test(low)) return true; // link-local fe80::/10
+  const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/.exec(low);
+  if (mapped) return isPrivateIp(mapped[1]);
+  return false;
+}
+
+async function assertPublicHost(hostname) {
+  if (isPrivateIp(hostname)) throw new Error('blocked-address');
+  const addrs = await dns.lookup(hostname, { all: true });
+  if (!addrs.length) throw new Error('no-address');
+  for (const a of addrs) {
+    if (isPrivateIp(a.address)) throw new Error('blocked-address');
+  }
+}
+
+async function guardedFetch(urlStr, { timeoutMs = 5000, redirects = 3 } = {}) {
+  let current = new URL(urlStr);
+  for (let i = 0; i <= redirects; i++) {
+    if (current.protocol !== 'http:' && current.protocol !== 'https:') throw new Error('bad-scheme');
+    await assertPublicHost(current.hostname);
+    const resp = await fetch(current, {
+      redirect: 'manual',
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { 'user-agent': 'Mozilla/5.0 (compatible; TekotekStudio/1.0)', accept: '*/*' },
+    });
+    if ([301, 302, 303, 307, 308].includes(resp.status)) {
+      const loc = resp.headers.get('location');
+      try { if (resp.body) resp.body.cancel(); } catch {}
+      if (!loc || i === redirects) throw new Error('too-many-redirects');
+      current = new URL(loc, current);
+      continue;
+    }
+    return resp;
+  }
+  throw new Error('too-many-redirects');
+}
+
+function readMetas(html) {
+  const out = {};
+  const tags = html.match(/<meta\b[^>]*>/gi) || [];
+  for (const tag of tags) {
+    const key = /(?:property|name)\s*=\s*["']([^"']+)["']/i.exec(tag);
+    const content = /content\s*=\s*["']([^"']*)["']/i.exec(tag);
+    if (key && content) {
+      const k = key[1].toLowerCase();
+      if (!(k in out)) out[k] = content[1];
+    }
+  }
+  return out;
+}
+
+function decodeEntities(s) {
+  return String(s || '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .trim();
+}
+
+function formatPrice(amount, currency) {
+  const amt = decodeEntities(amount).replace(/[^\d.,]/g, '');
+  if (!amt) return '';
+  const cur = decodeEntities(currency || '').toUpperCase();
+  const symbols = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', CAD: 'CA$', AUD: 'A$', NZD: 'NZ$' };
+  if (symbols[cur]) return symbols[cur] + amt;
+  return cur ? `${amt} ${cur}` : amt;
+}
+
+async function fetchImageDataUrl(src, base) {
+  const u = new URL(src, base);
+  const resp = await guardedFetch(u.toString());
+  const type = (resp.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (!type.startsWith('image/')) throw new Error('not-an-image');
+  const buf = Buffer.from(await resp.arrayBuffer());
+  if (buf.length > IMAGE_LIMIT) throw new Error('too-large');
+  return `data:${type};base64,${buf.toString('base64')}`;
+}
+
+app.post('/api/link', async (req, res) => {
+  const raw = typeof req.body.url === 'string' ? req.body.url.trim() : '';
+  try {
+    const page = await guardedFetch(raw);
+    const buf = Buffer.from(await page.arrayBuffer());
+    if (buf.length > PAGE_LIMIT) throw new Error('too-large');
+    const metas = readMetas(buf.toString('utf8'));
+    const name = decodeEntities(metas['og:title'] || '');
+    const price = formatPrice(metas['product:price:amount'] || metas['og:price:amount'] || '', metas['product:price:currency'] || metas['og:price:currency'] || '');
+    const srcs = [metas['og:image'], metas['og:image:secure_url'], metas['twitter:image'], metas['twitter:image:src']]
+      .filter(Boolean).slice(0, 3);
+    const images = [];
+    for (const src of srcs) {
+      if (images.length >= 3) break;
+      try {
+        images.push(await fetchImageDataUrl(src, page.url || raw));
+      } catch {} // one bad image does not sink the page
+    }
+    if (!name && !price && !images.length) throw new Error('nothing-found');
+    return res.json({ name, price, images });
+  } catch (err) {
+    console.warn('link read failed: ' + err.message);
+    return res.status(422).json({ error: 'unreadable' });
+  }
+});
+
 // The template ships no favicon file; index.html carries an inline SVG
 // icon instead. Answer 204 here so anything that still probes
 // /favicon.ico (older browsers, direct visits) doesn't fall through to
@@ -195,6 +400,27 @@ async function start() {
   const server = app.listen(port, () => console.log(`Listening on :${port}`));
   // Let Envoy retire idle upstream connections at 60s, with a 15s margin.
   server.keepAliveTimeout = 75_000;
+  return server;
 }
 
-start().catch(err => { console.error(err); process.exit(1); });
+// Stop accepting connections, drain for ~3 s, close the pool, exit.
+let shuttingDown = false;
+function shutdown(signal, server) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`${signal}: draining connections`);
+  try { if (server) server.close(); } catch {}
+  setTimeout(async () => {
+    try { await pool.end(); } catch {}
+    process.exit(0);
+  }, 3000).unref?.();
+  // Never hang the container if the drain itself stalls.
+  setTimeout(() => process.exit(0), 8000).unref();
+}
+
+start()
+  .then((server) => {
+    process.on('SIGTERM', () => shutdown('SIGTERM', server));
+    process.on('SIGINT', () => shutdown('SIGINT', server));
+  })
+  .catch(err => { console.error(err); process.exit(1); });

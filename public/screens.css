@@ -1,0 +1,99 @@
+/* The screens the spec drew, carried over by the platform before the first
+   version was built (screen 1 is public/index.html's main screen; screen 2,
+   if any, its <template data-spec-screen="2">). Colours are the design kit's
+   tokens, rgb(var(--accent)), so they follow the light and the dark look. */
+
+/* Each screen is one centred column: the phone width it was drawn at grows
+   to a readable column on a wider window, never rows and buttons stretched
+   across the window. Remove this only for an app that fills the window by
+   design, such as a map. */
+[data-spec-screen] {
+  width: 100%;
+  max-width: 42rem;
+  margin-inline: auto;
+}
+
+.app {
+  background: rgb(var(--ground));
+  color: rgb(var(--fg));
+  min-height: 1400px;
+  width: 390px;
+  box-sizing: border-box;
+  padding: 16px;
+  font-family: ui-rounded,system-ui,sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.app * {box-sizing:border-box;margin:0}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.t {font-size:20px;line-height:28px;font-weight:600}
+
+.small {font-size:14px;line-height:20px;color:rgb(var(--muted))}
+
+.stage {display:flex;gap:12px;align-items:flex-start}
+
+.phone {width:180px;height:320px;border-radius:18px;background:rgb(var(--ink));position:relative;overflow:hidden;flex:none;border:2px solid rgb(var(--line))}
+
+.img {position:absolute;left:0;right:0;top:0;height:200px;background:rgb(222 205 180);display:flex;align-items:center;justify-content:center}
+
+.badge {position:absolute;left:10px;top:150px;background:rgb(var(--accent));color:rgb(var(--on-accent));border-radius:8px;padding:2px 10px;font-weight:700;font-size:20px;line-height:28px;transform:rotate(-6deg)}
+
+.badge span {display:block;font-size:12px;line-height:14px;font-weight:600}
+
+.cap {position:absolute;left:10px;right:10px;top:212px;color:#fff;font-size:14px;line-height:20px;font-weight:600}
+
+.cart {position:absolute;right:12px;bottom:14px;width:52px;height:52px;border-radius:50%;background:rgb(var(--cart));display:flex;align-items:center;justify-content:center;box-shadow:-2px 2px 0 rgb(var(--accent))}
+
+.finger {position:absolute;right:66px;bottom:22px;transform:rotate(-20deg)}
+
+.side {flex:1;display:flex;flex-direction:column;gap:8px}
+
+.btn-primary,.btn-secondary {min-height:44px;border-radius:8px;padding:0 12px;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgb(var(--line));font-family:inherit}
+
+.btn-primary {background:rgb(var(--accent));color:rgb(var(--on-accent));border-color:transparent}
+
+.btn-secondary {background:rgb(var(--surface));color:rgb(var(--fg))}
+
+.tl {margin:16px 0 8px;background:rgb(var(--surface));border:1px solid rgb(var(--line));border-radius:12px;padding:12px}
+
+.track {display:flex;height:44px;padding:8px 0;border-radius:6px;overflow:hidden;margin:8px 0 4px;gap:2px;position:relative}
+
+.track div {font-size:14px;line-height:28px;padding-left:6px;color:#fff;background:rgb(var(--ink));border-radius:6px}
+
+.over {display:flex;height:20px;gap:2px;margin-bottom:6px}
+
+.over div {font-size:12px;line-height:20px;padding-left:6px;border-radius:4px}
+
+.head {position:absolute;top:8px;bottom:8px;left:79%;width:2px;background:rgb(var(--accent))}
+
+.section-label {font-size:14px;line-height:20px;font-weight:500;color:rgb(var(--muted));margin:16px 4px 8px}
+
+.lbl {font-size:14px;line-height:20px;color:rgb(var(--muted));margin:0 4px 4px}
+
+.field {min-height:44px;width:100%;border:1px solid rgb(var(--line));background:rgb(var(--surface));border-radius:8px;padding:10px 12px;display:flex;align-items:center}
+
+.row {display:flex;gap:8px}
+
+.row>div {flex:1}
+
+.thumbs {display:flex;gap:8px}
+
+.th {width:72px;height:72px;border-radius:8px;border:1px solid rgb(var(--line));background:rgb(222 205 180);position:relative}
+
+.x {position:absolute;top:-8px;right:-8px;width:28px;height:28px;border-radius:50%;background:rgb(var(--surface));border:1px solid rgb(var(--line));display:flex;align-items:center;justify-content:center}
+
+/* Keep the visual cross 28 px but tap it at 44 px: the invisible ::after
+   widens the button's hit area, as the platform's tap-target rule asks. */
+.x::after {content:'';position:absolute;inset:-8px}
+
+.th.add {background:rgb(var(--surface));border-style:dashed;display:flex;align-items:center;justify-content:center;color:rgb(var(--muted))}
+
+.script {min-height:120px;align-items:flex-start}
