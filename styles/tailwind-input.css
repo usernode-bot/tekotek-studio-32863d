@@ -39,22 +39,24 @@
     --on-accent: 255 255 255; /* text on the accent */
     --danger: 185 28 28;
     --on-danger: 255 255 255;
-    --focus: 13 148 136;      /* the keyboard focus ring */
-    --cart: 254 204 0; /* from the spec's screens */
-    --ink: 18 18 18; /* from the spec's screens */
+    --focus: 219 39 119;      /* the keyboard focus ring, the accent */
+    --cart: 254 204 0; /* TikTok yellow, the cart and the timeline block */
+    --ink: 18 18 18; /* the video frame and the text on the cart */
   }
   .dark {
-    --ground: 12 10 9;
-    --surface: 28 25 23;
-    --raised: 41 37 36;
-    --fg: 245 245 244;
-    --muted: 168 162 158;
-    --line: 68 64 60;
-    --accent: 45 212 191;
-    --on-accent: 4 47 46;
+    --ground: 20 18 17;
+    --surface: 32 29 27;
+    --raised: 45 41 38;
+    --fg: 245 244 242;
+    --muted: 172 166 160;
+    --line: 70 65 61;
+    --accent: 244 114 182;
+    --on-accent: 40 6 22;
     --danger: 248 113 113;
     --on-danger: 69 10 10;
-    --focus: 94 234 212;
+    --focus: 244 114 182;
+    --cart: 254 214 51;
+    --ink: 18 18 18;
   }
   /* el.hidden = true hides an element even when a class gives it a display
      (flex, the components below). */

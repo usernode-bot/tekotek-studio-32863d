@@ -95,24 +95,30 @@ tables you've marked private), etc.
 
 ## About Tekotek Studio
 
-Turn product links into 15-second TikTok promo videos
-
-_(add a sentence or two more of product context here so Claude Code has a
-shared understanding of what this app is for)_
+Turn product links into 15-second TikTok promo videos. A TikTok seller pastes
+a product link (or uploads up to 5 product photos), fills in name, price and
+a badge, and the app writes a short voiceover script (LLM proxy) that ends
+with a tap-the-cart ask. One screen: a 9:16 phone preview with a tappable
+timeline, and an in-browser MP4 export (1080×1920, 15 s) via Remotion — the
+same composition drives the preview and the export. The app keeps no data;
+everything is client-side state until export.
 
 ## Design
 
 This app's look. The first real version fills in the blanks; every later
 change follows it, and updates it when a request changes the look on purpose.
 
-- **Palette:** _(name the accent, any second colour and the neutrals, e.g.
-  "accent: tomato red; second: basil green; neutrals: warm greys")_
-- **Signature element:** _(the one thing on screen drawn from this app's
-  subject, which no other app would have)_
+- **Palette:** accent hot pink (`accent` — the primary action, price badge);
+  second colour TikTok cart yellow (`cart` — only ever the cart call-to-action
+  and its ink text); neutrals warm greys with an ink-black video frame
+  (`ink`). The video itself sits on the fixed ink background of a phone clip
+  and does not re-theme.
+- **Signature element:** the yellow cart circle with a pink offset shadow and
+  a pointing finger that taps it — drawn in `src/PromoVideo.jsx`, popping in
+  with a spring bounce at 0:11. It is the one visual motif the whole app
+  exists to produce.
 - **Type scale:** `text-title`, `text-heading`, `text-body`, `text-small`
   _(change their sizes in `tailwind.config.js` if you must, not their number)_
-- **One fixed look:** _(only for an app drawn as its own scene, such as a
-  game: which look, and why. Otherwise delete this line.)_
 
 The kit is in `styles/tailwind-input.css`: colour tokens with a light and
 a dark value (named in `tailwind.config.js`), and a few components
@@ -142,6 +148,15 @@ Re-theme by changing the token values there, keeping every text pair at
 
 ## App-specific conventions
 
-_(optional — e.g. "all currency values stored as integer cents, not
-floats"; "the `posts` table is append-only"; "avoid adding new
-dependencies"; etc.)_
+- The app keeps **no data**: no tables, nothing written to Postgres. Both API
+  routes (`/api/script`, `/api/link`) only fetch — the LLM proxy and a
+  guarded read of the pasted product page. Product details, images and the
+  script live in client state until the user exports.
+- `/api/link` must keep its SSRF guard (private/loopback/metadata addresses
+  blocked, re-checked after every redirect, size and content-type limits).
+  Don't relax it for convenience.
+- The video constants (15 s, 30 fps, 1080×1920, cart at 0:11, badge at 0:02)
+  live in `src/PromoVideo.jsx`; the timeline UI reads the same layout
+  function, so change both there or they drift.
+- The demo (`?demo=1`, staging only) is fully client-side with local SVG
+  images in `public/demo/` — no network.

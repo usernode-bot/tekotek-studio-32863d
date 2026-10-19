@@ -4,8 +4,31 @@
     "emoji": "🎬"
   },
   "secrets": [],
+  "llm": {
+    "purpose": "Writes a short voiceover script from your product details",
+    "suggested_daily_cap_cents": 100
+  },
   "governance": {
     "preset": "you_or_the_group"
   },
-  "tests": []
+  "tests": [
+    {
+      "name": "Studio opens empty",
+      "path": "/",
+      "expectText": "Add product images"
+    },
+    {
+      "id": "studio-demo",
+      "name": "Demo shows a finished preview",
+      "path": "/?demo=1",
+      "expectText": "Glow Serum 30ml",
+      "visual": true,
+      "impact": ["public/**", "src/**"]
+    },
+    {
+      "name": "Health",
+      "path": "/health",
+      "expectText": "ok"
+    }
+  ]
 }

@@ -43,6 +43,9 @@ module.exports = {
   // and keep these names.
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['ui-rounded', 'system-ui', 'sans-serif'],
+      },
       colors: {
         ground: token('ground'), // the page
         surface: token('surface'), // lists, cards, fields
@@ -55,6 +58,8 @@ module.exports = {
         danger: token('danger'),
         'on-danger': token('on-danger'),
         focus: token('focus'), // the keyboard focus ring
+        cart: token('cart'), // TikTok yellow: the cart call-to-action
+        ink: token('ink'), // the video frame's black and the text on the cart
       },
       // The type scale: four sizes, and nothing in between.
       fontSize: {
