@@ -40,7 +40,7 @@
 
 .stage {display:flex;gap:12px;align-items:flex-start}
 
-.phone {width:180px;height:320px;border-radius:18px;background:rgb(var(--ink));position:relative;overflow:hidden;flex:none;border:3px solid rgb(var(--ink))}
+.phone {width:180px;height:320px;border-radius:18px;background:rgb(var(--ink));position:relative;overflow:hidden;flex:none;border:2px solid rgb(var(--line))}
 
 .img {position:absolute;left:0;right:0;top:0;height:200px;background:rgb(222 205 180);display:flex;align-items:center;justify-content:center}
 
@@ -64,15 +64,15 @@
 
 .tl {margin:16px 0 8px;background:rgb(var(--surface));border:1px solid rgb(var(--line));border-radius:12px;padding:12px}
 
-.track {display:flex;height:28px;border-radius:6px;overflow:hidden;margin:8px 0 4px;gap:2px;position:relative}
+.track {display:flex;height:44px;padding:8px 0;border-radius:6px;overflow:hidden;margin:8px 0 4px;gap:2px;position:relative}
 
-.track div {font-size:14px;line-height:28px;padding-left:6px;color:#fff;background:rgb(var(--ink))}
+.track div {font-size:14px;line-height:28px;padding-left:6px;color:#fff;background:rgb(var(--ink));border-radius:6px}
 
 .over {display:flex;height:20px;gap:2px;margin-bottom:6px}
 
 .over div {font-size:12px;line-height:20px;padding-left:6px;border-radius:4px}
 
-.head {position:absolute;top:0;bottom:0;left:79%;width:2px;background:rgb(var(--accent))}
+.head {position:absolute;top:8px;bottom:8px;left:79%;width:2px;background:rgb(var(--accent))}
 
 .section-label {font-size:14px;line-height:20px;font-weight:500;color:rgb(var(--muted));margin:16px 4px 8px}
 
@@ -89,6 +89,10 @@
 .th {width:72px;height:72px;border-radius:8px;border:1px solid rgb(var(--line));background:rgb(222 205 180);position:relative}
 
 .x {position:absolute;top:-8px;right:-8px;width:28px;height:28px;border-radius:50%;background:rgb(var(--surface));border:1px solid rgb(var(--line));display:flex;align-items:center;justify-content:center}
+
+/* Keep the visual cross 28 px but tap it at 44 px: the invisible ::after
+   widens the button's hit area, as the platform's tap-target rule asks. */
+.x::after {content:'';position:absolute;inset:-8px}
 
 .th.add {background:rgb(var(--surface));border-style:dashed;display:flex;align-items:center;justify-content:center;color:rgb(var(--muted))}
 

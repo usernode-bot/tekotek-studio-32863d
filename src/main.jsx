@@ -13,7 +13,7 @@ import {
   VIDEO_HEIGHT,
   timelineLayout,
 } from './PromoVideo';
-import {exportMp4, webCodecsH264Supported} from './export';
+import {exportMp4, pickVideoCodec} from './export';
 
 const MAX_IMAGES = 5;
 const DEMO_FRAME = 360; // the demo preview sits paused at 0:12
@@ -108,12 +108,14 @@ function App() {
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [exportMsg, setExportMsg] = useState(''); // failure or cancel line
-  const [canExport, setCanExport] = useState(true);
+  const [canExport, setCanExport] = useState('pending'); // pending | h264 | vp9 | none
+  const [previewNote, setPreviewNote] = useState('');
   const [demo, setDemo] = useState(false);
 
   const playerRef = useRef(null);
   const fileRef = useRef(null);
   const exportAbort = useRef(null);
+  const noteTimer = useRef(null);
 
   const canGenerate = name.trim() && price.trim() && images.length > 0;
   const words = script.split(/\s+/).filter(Boolean).length;
@@ -132,7 +134,7 @@ function App() {
   };
 
   useEffect(() => {
-    webCodecsH264Supported(VIDEO_WIDTH, VIDEO_HEIGHT, FPS).then(setCanExport);
+    pickVideoCodec(VIDEO_WIDTH, VIDEO_HEIGHT, FPS).then(setCanExport);
     fetch(apiUrl('/api/config'), {headers: apiHeaders()})
       .then((r) => r.json())
       .then((cfg) => {
@@ -220,10 +222,14 @@ function App() {
       setScriptError(err.message || 'writing the script failed');
       setScriptStatus('error');
     }
-    // The preview builds either way, with whatever script is typed.
+    // The preview builds either way, with whatever script is typed; the
+    // playhead stays where the viewer left it.
     setHasPreview(true);
-    setFrame(0);
-    if (playerRef.current) playerRef.current.seekTo(0);
+    if (scriptText) {
+      setPreviewNote('Preview updated.');
+      if (noteTimer.current) clearTimeout(noteTimer.current);
+      noteTimer.current = setTimeout(() => setPreviewNote(''), 4000);
+    }
   }
 
   async function fillFromLink() {
@@ -271,7 +277,7 @@ function App() {
   }
 
   async function doExport() {
-    if (!hasPreview || exporting || !canExport) return;
+    if (!hasPreview || exporting || canExport === 'none' || canExport === 'pending') return;
     if (playing) togglePlay();
     setExporting(true);
     setExportProgress(0);
@@ -282,6 +288,7 @@ function App() {
       const blob = await exportMp4({
         composition: {id: 'promo', width: VIDEO_WIDTH, height: VIDEO_HEIGHT, fps: FPS, durationInFrames: DURATION_FRAMES},
         inputProps: videoProps,
+        videoCodec: canExport,
         signal: ctrl.signal,
         onProgress: setExportProgress,
       });
@@ -327,8 +334,12 @@ function App() {
               acknowledgeRemotionLicense
             />
           ) : (
-            <div className="state-empty" style={{height: '100%', color: 'rgb(255 255 255)'}}>
-              <div className="small" style={{color: 'rgb(255 255 255)'}}>Add product images</div>
+            <div
+              className="state-empty"
+              style={{position: 'absolute', inset: 0, justifyContent: 'center', background: 'rgb(var(--raised))'}}
+            >
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--muted))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 4h3l2 11h10l2-8H7" /><circle cx="9" cy="20" r="1" /><circle cx="17" cy="20" r="1" /></svg>
+              <div className="small">Add product images</div>
               <button className="btn-primary" onClick={() => fileRef.current.click()}>Add images</button>
             </div>
           )}
@@ -347,10 +358,11 @@ function App() {
           <button className={buttonCls(Boolean(canGenerate))} onClick={generate} disabled={!canGenerate || writing}>
             {writing ? 'Writing script' : 'Generate preview'}
           </button>
-          <button className="btn-secondary" onClick={doExport} disabled={!hasPreview || exporting || !canExport}>
+          <button className="btn-secondary" onClick={doExport} disabled={!hasPreview || exporting || canExport === 'none' || canExport === 'pending'}>
             <DownloadIcon />
             Export MP4
           </button>
+          {previewNote ? <div className="small">Preview updated.</div> : null}
           {exporting ? (
             <div className="small" style={{display: 'flex', alignItems: 'center', gap: 8}}>
               <span>Exporting… {Math.round(exportProgress * 100)}%</span>
@@ -367,7 +379,7 @@ function App() {
               </button>
             </div>
           ) : null}
-          {!canExport ? <div className="small">Export needs a recent Chrome, Edge or Safari.</div> : null}
+          {canExport === 'none' && hasPreview ? <div className="small">Export needs a recent Chrome, Edge or Safari.</div> : null}
         </div>
       </div>
 
@@ -378,7 +390,7 @@ function App() {
         </div>
         <div className="track" onClick={seekFromTimeline} role="button" aria-label="Jump to a moment in the video" style={{cursor: hasPreview ? 'pointer' : 'default'}}>
           {layout.images.map((seg, i) => (
-            <div key={i} style={{flex: seg.end - seg.start, background: i % 2 ? 'rgb(60 60 60)' : undefined}}>
+            <div key={i} style={{flex: seg.end - seg.start, background: i % 2 ? 'rgb(60 60 60)' : undefined, border: '1px solid rgb(var(--line))'}}>
               Image {i + 1}
             </div>
           ))}
@@ -397,7 +409,7 @@ function App() {
         <input
           className="field"
           type="url"
-          placeholder="e.g. https://shop.example/glow-serum"
+          placeholder="Paste a product link"
           value={linkUrl}
           onChange={(e) => setLinkUrl(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && fillFromLink()}
